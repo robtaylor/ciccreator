@@ -17,11 +17,12 @@
 ##   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ######################################################################
 
-CONFIG += qt console
+CONFIG += qt console svg
 CONFIG += static
 TEMPLATE = app
 TARGET = cic
 
+PRE_TARGETDEPS = ../cic-core/libcic.a
 HEADERS +=  src/version.h  \
 
 include(../etc/mac_sdk.pro)

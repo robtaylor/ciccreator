@@ -70,7 +70,7 @@ ifeq (${UNAME_S},Darwin)
 #QMAKEOPT+= QMAKE_DEFAULT_LIBDIRS=${shell xcrun -show-sdk-path}/usr/lib
 endif
 
-QMAKE=qmake6
+QMAKE:=qmake6
 ifeq (, $(shell which ${QMAKE}))
 QMAKE=qmake-qt5
 DEFQMAKE=QMAKE_5
@@ -110,6 +110,7 @@ clean:
 	-rm cic-gui/Makefile
 	-rm qmake.make
 	-rm -rf .qmake.stash
+	-rm cic/*.{a,la}
 	${foreach f, ${TESTS}, cd tests/${f} ; make clean;cd ../../;}
 
 doxygen:
