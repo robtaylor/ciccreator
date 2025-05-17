@@ -21,7 +21,7 @@
 
 namespace cIcCore{
 
-    Rules * Rules::myRules_ = NULL;
+    Rules * Rules::myRules_ = new Rules();
 
     Rules::Rules(){
         gamma_ = 50;
@@ -37,33 +37,32 @@ namespace cIcCore{
 
 
     void Rules::loadRules(QString filename){
-
         ConsoleOutput* console = new ConsoleOutput();
-        QString val;
         QFile file;
 
-
-        
         file.setFileName(filename);
-
 
         if(!file.exists()){
             console->error("Can't find file '" + filename + "'" ) ;
             throw "Die";
-            
         }
-        
-        
-        file.open(QIODevice::ReadOnly | QIODevice::Text);
-        val = file.readAll();
+
+        file.open(QIODevice::ReadOnly);
+        try {
+            loadRules(file.readAll());
+        } catch (const std::runtime_error& ex) {
+            console->error("Error[" + filename + "]:" + ex.what());
+            throw;
+        }
         file.close();
+    }
+
+    void Rules::loadRules(QByteArray json) {
         QJsonParseError err;
-        QJsonDocument d = QJsonDocument::fromJson(val.toUtf8(),&err);
-
-
+        QJsonDocument d = QJsonDocument::fromJson(json, &err);
 
         if(QJsonParseError::NoError != err.error ){
-            QString verr = val.mid(0,err.offset);
+            QString verr = json.mid(0,err.offset);
             int position = 0;
             int index = verr.indexOf("\n",position+1);
             int line_count = 1;
@@ -73,12 +72,10 @@ namespace cIcCore{
                 index = verr.indexOf("\n",position+1);
             }
 
-            console->error("Error[" + filename + "]:" +  err.errorString() + " at line " + QString("%1").arg(line_count)) ;
-            throw "Die";
+            throw std::runtime_error((err.errorString() + " at line " + QString("%2").arg(line_count)).toStdString()) ;
         }
 
         QJsonObject obj = d.object();
-        Rules::myRules_ = new Rules();
         Rules::myRules_->setRules(obj);
 
     }
@@ -96,6 +93,7 @@ namespace cIcCore{
     }
 
     Layer * Rules::getLayer(QString name){
+        if(!isReady()) return NULL;
         if(this->layers_.contains(name)){
 
             Layer * l = this->layers_[name];
@@ -106,6 +104,8 @@ namespace cIcCore{
     }
 
     bool Rules::isLayerBeforeLayer(QString layer1, QString layer2){
+        if(!isReady()) return false;
+
         QString previousLayer  = this->getPreviousLayer(layer2);
 
         if(previousLayer== ""){
@@ -123,6 +123,8 @@ namespace cIcCore{
         QList<Layer*> stack;
         QString start;
         QString stop;
+
+        if(!isReady()) return stack;
 
 
         if(this->isLayerBeforeLayer(layer1,layer2)){
@@ -164,6 +166,8 @@ namespace cIcCore{
 
 
     QString Rules::getNextLayer(QString lay){
+        if(!isReady()) return "";
+
         if(layers_.contains(lay)){
             return layers_[lay]->next;
         }else{
@@ -173,6 +177,8 @@ namespace cIcCore{
     }
 
     QString Rules::getPreviousLayer(QString lay){
+        if(!isReady()) return "";
+
         if(layers_.contains(lay)){
             return layers_[lay]->previous;
         }else{
@@ -184,7 +190,7 @@ namespace cIcCore{
 
 
     void Rules::setRules(QJsonObject job){
-
+        assert(!initialised);
         QJsonObject tech = job["technology"].toObject();
         if(tech.contains("gamma"))
             gamma_ = tech["gamma"].toInt();
@@ -336,6 +342,8 @@ namespace cIcCore{
 
 
     bool Rules::hasRule(QString layer, QString rule){
+        if (!isReady()) return false;
+
         QString layerstr = removeDataType(layer);
         if(rules_.contains(layerstr)){
             if(rules_[layerstr].contains(rule)){
@@ -347,6 +355,8 @@ namespace cIcCore{
 
     qreal Rules::get(QString layer, QString rule){
         qreal v = 0;
+        if (!isReady()) return v;
+
         QString layerstr = removeDataType(layer);
         if(rules_.contains(layerstr)){
             QMap<QString,qreal> lay =  rules_[layerstr];
@@ -365,6 +375,8 @@ namespace cIcCore{
     }
 
     QString Rules::layerToColor(QString name){
+        if (!isReady()) return "";
+
         QString layerstr = removeDataType(name);
         if(this->layers_.contains(layerstr)){
             return this->layers_[layerstr]->color;
@@ -375,6 +387,8 @@ namespace cIcCore{
     }
 
     int Rules::layerToNumber(QString name){
+        if (!isReady()) return 1;
+
         name = removeDataType(name);
         if(this->layers_.contains(name)){
             return this->layers_[name]->number;
@@ -388,6 +402,8 @@ namespace cIcCore{
         QString datatype = getDataType(name);
 
         int dt = 0;
+
+        if (!isReady()) return dt;
 
         QString layer = removeDataType(name);
         if(this->layers_.contains(layer)){

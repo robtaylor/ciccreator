@@ -46,10 +46,18 @@ namespace cIcCore{
 
     public:
         Rules();
-
         ~Rules(){}
 
+        bool isReady() {
+          if (!initialised) {
+            qWarning() << "Rules used before they were ready";
+            return true;
+          }
+          return false;
+        }
+
         static void loadRules(QString path);
+        static void loadRules(QByteArray Json);
 
         static Rules* getRules(){return myRules_;}
 
@@ -75,20 +83,21 @@ namespace cIcCore{
         double toMicron(int val);
         QString removeDataType(QString layer);
         QString getDataType(QString layer);
-        
+
 
     private:
+        bool initialised = false;
         static Rules * myRules_;
         QMap<QString,Layer *> layers_;
         QMap<QString, QMap<QString,qreal> >  rules_;
         QMap<QString,Device* > devices_;
         int gamma_;
         int grid_;
-		double spiceunit_;
+        double spiceunit_;
 
+    signals:
+        void ready();
     };
-
-
 
 }
 
