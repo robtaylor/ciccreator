@@ -22,7 +22,7 @@ CONFIG += static
 TEMPLATE = app
 TARGET = cic
 
-PRE_TARGETDEPS = ../cic-core/libcic.a
+emscripten: LIBS += -L ../cic-core -lcic
 HEADERS +=  src/version.h  \
 
 include(../etc/mac_sdk.pro)

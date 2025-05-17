@@ -76,9 +76,9 @@ QMAKE=qmake-qt5
 DEFQMAKE=QMAKE_5
 endif
 
-.PHONY: doxygen coverage sim
+.PHONY: doxygen coverage sim debug compile release clean help routes viewroutes
 
-all: compile
+all: release
 
 lay:
 	mkdir lay
@@ -93,6 +93,8 @@ compile:
 	echo "#define CICHASH \""${VERSION_HASH}"\""  >> cic-gui/src/version.h
 	${QMAKE} -o qmake.make DEFINES+="${DEFQMAKE}" ${QMAKEOPT}  ciccreator.pro ${QTOPT}
 	${MAKE} -f qmake.make
+
+release: compile
 	test -d release || mkdir release
 	cp release/${CIC} release/cic.${OSBIN}${OSID}${OSVER}_${VERSION}
 	cp release/${CICGUI} release/cic-gui.${OSBIN}${OSID}${OSVER}_${VERSION}
